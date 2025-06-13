@@ -1,5 +1,4 @@
 const express = require("express");
-const { ObjectId } = require("mongodb");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
@@ -61,6 +60,7 @@ async function run() {
           description,
           date,
           picture,
+          location,
           email: user.email,
           createdBy: user.name,
         });
