@@ -350,26 +350,6 @@ async function run() {
       }
     });
 
-    app.post("/api/add-task", verifyToken, async (req, res) => {
-      const { title, category, description, deadline, budget } = req.body;
-      const user = req.user;
-
-      try {
-        const task = await tasks.insertOne({
-          title,
-          category,
-          description,
-          deadline,
-          budget,
-          email: user.email,
-          createdBy: user.name,
-        });
-        res.status(201).json({ message: "Task added successfully", task });
-      } catch (err) {
-        res.status(500).json({ message: "Error adding task" });
-      }
-    });
-
     app.post("/api/add-event", verifyToken, async (req, res) => {
       const { title, category, description, date, picture } = req.body;
       const user = req.user;
