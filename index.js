@@ -116,32 +116,6 @@ async function run() {
       }
     });
 
-    app.delete("/api/events/:id", verifyToken, async (req, res) => {
-      const eventId = req.params.id;
-      const userEmail = req.user.email;
-
-      try {
-        const event = await events.findOne({ _id: new ObjectId(eventId) });
-        if (!event) {
-          return res.status(404).json({ message: "Event not found" });
-        }
-
-        // Ensure the user can only delete their own tasks
-        if (event.email !== userEmail) {
-          return res
-            .status(403)
-            .json({ message: "You can only delete your own events" });
-        }
-
-        await events.deleteOne({ _id: new ObjectId(eventId) });
-
-        res.status(200).json({ message: "Event deleted successfully" });
-      } catch (error) {
-        console.error("Error deleting event:", error);
-        res.status(500).json({ message: "Error deleting event" });
-      }
-    });
-
     app.post("/api/bookings", verifyToken, async (req, res) => {
       const { eventId } = req.body;
       const userEmail = req.user.email;
