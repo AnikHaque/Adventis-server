@@ -369,7 +369,17 @@ async function run() {
         res.status(500).json({ message: "Error creating event" });
       }
     });
-
+    // GET all events
+    app.get("/api/events", async (req, res) => {
+      try {
+        const db = client.db("freelance-marketplace");
+        const events = await db.collection("events").find().toArray();
+        res.status(200).json(events);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        res.status(500).json({ message: "Error fetching events" });
+      }
+    });
     // GET top 6 tasks sorted by upcoming deadlines
     app.get("/api/featured", async (req, res) => {
       try {
