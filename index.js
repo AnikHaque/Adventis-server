@@ -370,30 +370,6 @@ async function run() {
       }
     });
 
-    // GET all tasks
-    app.get("/api/tasks", async (req, res) => {
-      try {
-        const db = client.db("freelance-marketplace");
-        const tasks = await db.collection("tasks").find().toArray();
-        res.status(200).json(tasks);
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-        res.status(500).json({ message: "Error fetching tasks" });
-      }
-    });
-
-    // GET all tasks
-    app.get("/api/events", async (req, res) => {
-      try {
-        const db = client.db("freelance-marketplace");
-        const events = await db.collection("events").find().toArray();
-        res.status(200).json(events);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-        res.status(500).json({ message: "Error fetching events" });
-      }
-    });
-
     // GET top 6 tasks sorted by upcoming deadlines
     app.get("/api/featured", async (req, res) => {
       try {
