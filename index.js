@@ -350,6 +350,7 @@ async function run() {
       }
     });
 
+    // Add event
     app.post("/api/add-event", verifyToken, async (req, res) => {
       const { title, category, description, date, picture } = req.body;
       const user = req.user;
@@ -369,6 +370,7 @@ async function run() {
         res.status(500).json({ message: "Error creating event" });
       }
     });
+
     // GET all events
     app.get("/api/events", async (req, res) => {
       try {
@@ -380,7 +382,8 @@ async function run() {
         res.status(500).json({ message: "Error fetching events" });
       }
     });
-    // GET top 6 tasks sorted by upcoming deadlines
+
+    // GET top 6 tasks sorted by upcoming date
     app.get("/api/featured", async (req, res) => {
       try {
         const db = client.db("freelance-marketplace");
@@ -433,57 +436,6 @@ async function run() {
       } catch (error) {
         console.error("Error fetching event by ID:", error);
         res.status(500).json({ message: "Error fetching event details" });
-      }
-    });
-
-    // POST to place a bid on a task
-    app.post("/api/bids/:taskId", verifyToken, async (req, res) => {
-      const { taskId } = req.params;
-      const userEmail = req.user.email; // Get the user email from the JWT token
-
-      try {
-        // Check if the user has already placed a bid for this task
-        const existingBid = await db
-          .collection("bids")
-          .findOne({ taskId: new ObjectId(taskId), userEmail });
-
-        if (existingBid) {
-          return res
-            .status(400)
-            .json({ message: "You have already placed a bid" });
-        }
-
-        // Place a new bid
-        const result = await db.collection("bids").insertOne({
-          taskId: new ObjectId(taskId),
-          userEmail,
-          createdAt: new Date(),
-        });
-
-        res.status(201).json({
-          message: "Bid placed successfully",
-          bidId: result.insertedId,
-        });
-      } catch (err) {
-        console.error("Error placing bid:", err);
-        res.status(500).json({ message: "Error placing bid" });
-      }
-    });
-
-    // GET all bids for a task
-    app.get("/api/bids/:taskId", async (req, res) => {
-      const { taskId } = req.params;
-
-      try {
-        const bids = await db
-          .collection("bids")
-          .find({ taskId: new ObjectId(taskId) })
-          .toArray();
-
-        res.status(200).json(bids); // Return the list of bids
-      } catch (err) {
-        console.error("Error fetching bids:", err);
-        res.status(500).json({ message: "Error fetching bids" });
       }
     });
 
