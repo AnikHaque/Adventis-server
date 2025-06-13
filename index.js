@@ -50,7 +50,8 @@ async function run() {
 
     // Add event
     app.post("/api/add-event", verifyToken, async (req, res) => {
-      const { title, category, description, date, picture } = req.body;
+      const { title, category, description, date, picture, location } =
+        req.body;
       const user = req.user;
 
       try {
