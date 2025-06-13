@@ -41,28 +41,20 @@ function verifyToken(req, res, next) {
 
 async function run() {
   try {
-    // await client.connect();
-    // console.log("✅ Connected to MongoDB");
-
     const db = client.db("freelance-marketplace");
     const users = db.collection("users");
     const tasks = db.collection("tasks");
     const events = db.collection("events");
     const bookings = db.collection("bookings");
 
-    const bids = db.collection("bids");
-
     app.get("/api/my-events", verifyToken, async (req, res) => {
       try {
         const userEmail = req.user.email;
 
-        // Fetch tasks based on user's email
         const eventsList = await events.find({ email: userEmail }).toArray();
 
-        // Fetch the user details for each task
         const eventsWithUserName = await Promise.all(
           eventsList.map(async (event) => {
-            // Fetch user by email (or _id if using user ID)
             const user = await users.findOne({ email: event.email });
             return {
               ...event,
@@ -71,7 +63,6 @@ async function run() {
           })
         );
 
-        // Send back the tasks with user names included
         res.status(200).json(eventsWithUserName);
       } catch (error) {
         console.error("Error fetching user's events:", error);
@@ -82,17 +73,15 @@ async function run() {
     app.put("/api/events/:id", verifyToken, async (req, res) => {
       const { title, category, description, date, picture } = req.body;
       const eventId = req.params.id;
-      const userEmail = req.user.email; // Email from token
-      const userName = req.user.name; // Name from token
+      const userEmail = req.user.email;
+      const userName = req.user.name;
 
       try {
-        // Check if the task exists
         const event = await events.findOne({ _id: new ObjectId(eventId) });
         if (!event) {
           return res.status(404).json({ message: "Event not found" });
         }
 
-        // Ensure the user is trying to update their own task
         if (event.email !== userEmail) {
           return res
             .status(403)
@@ -126,7 +115,6 @@ async function run() {
         res.status(500).json({ message: "Error updating event" });
       }
     });
-
     app.delete("/api/tasks/:id", verifyToken, async (req, res) => {
       const taskId = req.params.id;
       const userEmail = req.user.email;
