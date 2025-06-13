@@ -52,33 +52,6 @@ async function run() {
 
     const bids = db.collection("bids");
 
-    app.get("/api/my-tasks", verifyToken, async (req, res) => {
-      try {
-        const userEmail = req.user.email;
-
-        // Fetch tasks based on user's email
-        const tasksList = await tasks.find({ email: userEmail }).toArray();
-
-        // Fetch the user details for each task
-        const tasksWithUserName = await Promise.all(
-          tasksList.map(async (task) => {
-            // Fetch user by email (or _id if using user ID)
-            const user = await users.findOne({ email: task.email });
-            return {
-              ...task,
-              name: user?.name || "", // Add the user name to the task data
-            };
-          })
-        );
-
-        // Send back the tasks with user names included
-        res.status(200).json(tasksWithUserName);
-      } catch (error) {
-        console.error("Error fetching user's tasks:", error);
-        res.status(500).json({ message: "Error fetching tasks" });
-      }
-    });
-
     app.get("/api/my-events", verifyToken, async (req, res) => {
       try {
         const userEmail = req.user.email;
@@ -540,7 +513,7 @@ async function run() {
 
 run().catch(console.dir);
 
-// 🌐 Root route to check DB connection
+//  Root route to check DB connection
 app.get("/", async (req, res) => {
   try {
     await client.db("admin").command({ ping: 1 });
