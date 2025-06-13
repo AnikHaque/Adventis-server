@@ -1,4 +1,5 @@
 const express = require("express");
+const { ObjectId } = require("mongodb");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
@@ -47,6 +48,77 @@ async function run() {
     const events = db.collection("events");
     const bookings = db.collection("bookings");
 
+    // Add event
+    app.post("/api/add-event", verifyToken, async (req, res) => {
+      const { title, category, description, date, picture } = req.body;
+      const user = req.user;
+
+      try {
+        const event = await events.insertOne({
+          title,
+          category,
+          description,
+          date,
+          picture,
+          email: user.email,
+          createdBy: user.name,
+        });
+        res.status(201).json({ message: "Event created successfully", event });
+      } catch (err) {
+        res.status(500).json({ message: "Error creating event" });
+      }
+    });
+
+    // GET all events
+    app.get("/api/events", async (req, res) => {
+      try {
+        const db = client.db("freelance-marketplace");
+        const events = await db.collection("events").find().toArray();
+        res.status(200).json(events);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        res.status(500).json({ message: "Error fetching events" });
+      }
+    });
+
+    // GET event by ID
+    app.get("/api/events/:id", async (req, res) => {
+      try {
+        const db = client.db("freelance-marketplace");
+        const event = await db
+          .collection("events")
+          .findOne({ _id: new ObjectId(req.params.id) });
+
+        if (!event) {
+          return res.status(404).json({ message: "Event not found" });
+        }
+
+        res.status(200).json(event);
+      } catch (error) {
+        console.error("Error fetching event by ID:", error);
+        res.status(500).json({ message: "Error fetching event details" });
+      }
+    });
+
+    // GET featured events
+    app.get("/api/featured", async (req, res) => {
+      try {
+        const db = client.db("freelance-marketplace");
+        const events = await db
+          .collection("events")
+          .find()
+          .sort({ date: 1 }) // sort by soonest deadlines
+          .limit(6) // return only 6 tasks
+          .toArray();
+
+        res.status(200).json(events);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        res.status(500).json({ message: "Error fetching events" });
+      }
+    });
+
+    // GET my-events
     app.get("/api/my-events", verifyToken, async (req, res) => {
       try {
         const userEmail = req.user.email;
@@ -70,6 +142,7 @@ async function run() {
       }
     });
 
+    // Update my-events
     app.put("/api/events/:id", verifyToken, async (req, res) => {
       const { title, category, description, date, picture } = req.body;
       const eventId = req.params.id;
@@ -116,6 +189,7 @@ async function run() {
       }
     });
 
+    // Delete my-events
     app.delete("/api/events/:id", verifyToken, async (req, res) => {
       const eventId = req.params.id;
       const userEmail = req.user.email;
@@ -142,6 +216,7 @@ async function run() {
       }
     });
 
+    // Add bookings
     app.post("/api/bookings", verifyToken, async (req, res) => {
       const { eventId } = req.body;
       const userEmail = req.user.email;
@@ -171,6 +246,7 @@ async function run() {
       }
     });
 
+    // Get my-bookings
     app.get("/api/my-bookings", verifyToken, async (req, res) => {
       const userEmail = req.user.email;
 
@@ -210,8 +286,7 @@ async function run() {
       }
     });
 
-    const { ObjectId } = require("mongodb");
-
+    // Delete bookings
     app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
       const bookingId = req.params.id;
       const userEmail = req.user.email;
@@ -235,108 +310,6 @@ async function run() {
       }
     });
 
-    app.get("/api/bids/:taskId", verifyToken, async (req, res) => {
-      const { taskId } = req.params;
-      try {
-        const bids = await db
-          .collection("bids")
-          .aggregate([
-            {
-              $match: { taskId: new ObjectId(taskId) },
-            },
-            {
-              $lookup: {
-                from: "users",
-                localField: "userEmail",
-                foreignField: "email",
-                as: "userDetails",
-              },
-            },
-            {
-              $unwind: "$userDetails",
-            },
-            {
-              $project: {
-                _id: 1,
-                userEmail: 1,
-                bidderName: "$userDetails.name",
-                amount: 1,
-                message: 1,
-              },
-            },
-          ])
-          .toArray();
-
-        // Count the number of bids for the task
-        const bidCount = bids.length;
-
-        if (bids.length === 0) {
-          return res
-            .status(404)
-            .json({ message: "No bids found for this task" });
-        }
-
-        res.status(200).json({
-          bids,
-          bidCount, // Include the bid count in the response
-        }); // Send the bids with bidder info and count in the response
-      } catch (error) {
-        console.error("Error fetching bids:", error);
-        res.status(500).json({ message: "Error fetching bids" });
-      }
-    });
-
-    // Add event
-    app.post("/api/add-event", verifyToken, async (req, res) => {
-      const { title, category, description, date, picture } = req.body;
-      const user = req.user;
-
-      try {
-        const event = await events.insertOne({
-          title,
-          category,
-          description,
-          date,
-          picture,
-          email: user.email,
-          createdBy: user.name,
-        });
-        res.status(201).json({ message: "Event created successfully", event });
-      } catch (err) {
-        res.status(500).json({ message: "Error creating event" });
-      }
-    });
-
-    // GET all events
-    app.get("/api/events", async (req, res) => {
-      try {
-        const db = client.db("freelance-marketplace");
-        const events = await db.collection("events").find().toArray();
-        res.status(200).json(events);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-        res.status(500).json({ message: "Error fetching events" });
-      }
-    });
-
-    // GET top 6 tasks sorted by upcoming date
-    app.get("/api/featured", async (req, res) => {
-      try {
-        const db = client.db("freelance-marketplace");
-        const events = await db
-          .collection("events")
-          .find()
-          .sort({ date: 1 }) // sort by soonest deadlines
-          .limit(6) // return only 6 tasks
-          .toArray();
-
-        res.status(200).json(events);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-        res.status(500).json({ message: "Error fetching events" });
-      }
-    });
-
     // GET task by ID
     app.get("/api/tasks/:id", async (req, res) => {
       try {
@@ -356,25 +329,7 @@ async function run() {
       }
     });
 
-    // GET event by ID
-    app.get("/api/events/:id", async (req, res) => {
-      try {
-        const db = client.db("freelance-marketplace");
-        const event = await db
-          .collection("events")
-          .findOne({ _id: new ObjectId(req.params.id) });
-
-        if (!event) {
-          return res.status(404).json({ message: "Event not found" });
-        }
-
-        res.status(200).json(event);
-      } catch (error) {
-        console.error("Error fetching event by ID:", error);
-        res.status(500).json({ message: "Error fetching event details" });
-      }
-    });
-
+    // Signup
     app.post("/api/register", async (req, res) => {
       const { name, email, password, photoURL } = req.body;
 
@@ -413,6 +368,7 @@ async function run() {
       }
     });
 
+    // Login
     app.post("/api/login", async (req, res) => {
       const { email, password } = req.body;
 
@@ -441,6 +397,7 @@ async function run() {
       }
     });
 
+    // Save user
     app.post("/api/save-user", async (req, res) => {
       const { name, email, photoURL } = req.body;
 
@@ -467,10 +424,8 @@ async function run() {
         res.status(500).json({ message: "Internal server error" });
       }
     });
-
-    // Other routes and logic...
   } catch (err) {
-    console.error("❌ Error connecting to MongoDB:", err);
+    console.error("Error connecting to MongoDB:", err);
   }
 }
 
@@ -486,7 +441,7 @@ app.get("/", async (req, res) => {
   }
 });
 
-// 🚀 Start the server
+// Start the server
 app.listen(port, () => {
-  console.log(`🚀 Server is running on http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
